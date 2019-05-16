@@ -5,6 +5,7 @@ import json
 import os
 import time
 from timeit import default_timer as timer
+import sys
 
 
 # constants
@@ -24,7 +25,7 @@ def make_single_request():
   return r
 
 
-def main():
+def main(sampleTs):
   logs = []
 
   if os.path.exists(LOG_FILE) and os.path.isfile(LOG_FILE):
@@ -57,9 +58,14 @@ def main():
 
     i += 1
     print("====================================")
-    time.sleep(SAMPLE_TIMESTEP)
+    time.sleep(sampleTs)
 
 
 
 if __name__ == '__main__':
-    main()
+  print("usage: python3 main.py <sample_interval_in_sec>")
+  if len(sys.argv) == 1:
+    main(SAMPLE_TIMESTEP)
+  else:
+    main(int(sys.argv[1]))
+
