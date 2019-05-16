@@ -74,6 +74,7 @@
 </div>
 
 <script>
+  const LOGS_URL = 'http://54.188.129.23/logs.json';
   const average = list => list.reduce((prev, curr) => prev + curr) / list.length;
 
   function updateValues() {
@@ -146,7 +147,7 @@
   }
 
 
-  fetch('./logs.json')
+  fetch(LOGS_URL)
   .then(function(response) {
     return response.json();
   })
