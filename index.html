@@ -19,28 +19,109 @@
             height: 100%;
             width: 100%;
         }
+        #container {
+          margin: 0px;
+
+          height: 700px;
+          width: 1000px;
+        }
     </style>
 </head>
 <body>
+<div id='container'>
+  <div>
+    <h1>
+      AGOL Performance
+    </h1>
+    <h3>
+      Day picker
+      <select id='dayPicker' style="margin-left: 40px;" onchange="updateValues()"></select>
+    </h3>
+    <h3>
+        Min:
+      <label id='minValue'></label>
+    </h3>
+    <h3>
+        Max:
+      <label id='maxValue'></label>
+    </h3>
+    <h3>
+        Avg:
+      <label id='avgValue'></label>
+    </h3>
+    <h3>
+        Errors:
+      <label id='errorValue'></label>
+    </h3>
+    <h3>
+        Request above 10 seconds:
+      <label id='tenSecValue'></label>
+    </h3>
+    <h3>
+        Request above 1 second:
+      <label id='oneSecValue'></label>
+    </h3>
 
-<div id="chart1">
-    <svg></svg>
+    <h3>
+        Encountered Errors:
+      <label id='statusCodes'></label>
+    </h3>
+
+  </div>
+  <div id="chart1">
+      <svg></svg>
+  </div>
 </div>
 
 <script>
-  fetch('./logs.json')
-  .then(function(response) {
-    return response.json();
-  })
-  .then(function(values) {
-    dataBarChart = [
+  const average = list => list.reduce((prev, curr) => prev + curr) / list.length;
+
+  function updateValues() {
+    const key = document.getElementById("dayPicker").value;
+
+    window.dataBarChart = [
+      {
+          key: "AGOL uptime",
+          values: window.data[key]
+      }
+    ];
+
+    document.getElementById("minValue").innerHTML = Math.min(...window.data[key].map(i => i.rtt)).toFixed(2) + ' seconds';
+    document.getElementById("maxValue").innerHTML = Math.max(...window.data[key].map(i => i.rtt)).toFixed(2) + ' seconds';
+    document.getElementById("avgValue").innerHTML = average(window.data[key].map(i => i.rtt)).toFixed(2) + ' seconds';
+
+    const errors = window.data[key].filter(i => i.error);
+    document.getElementById("errorValue").innerHTML = `${errors.length} (${((100 * errors.length) / window.data[key].length).toFixed(2)} %)`;
+
+    const tenSec = window.data[key].filter(i => i.rtt > 10).length;
+    document.getElementById("tenSecValue").innerHTML = `${tenSec} (${((100 * tenSec) / window.data[key].length).toFixed(2)} %)`;
+
+    const oneSec = window.data[key].filter(i => i.rtt > 1).length;
+    document.getElementById("oneSecValue").innerHTML = `${oneSec} (${((100 * oneSec) / window.data[key].length).toFixed(2)} %)`;
+
+    const statusCode = new Set(errors.map(e => e.error.code));
+    document.getElementById("statusCodes").innerHTML = [...statusCode].join(', ');
+
+    // Update the SVG with the new data and call chart
+    window.chartData
+      .datum(window.dataBarChart)
+      .transition()
+      .duration(500)
+      .call(window.chart);
+
+    nv.utils
+      .windowResize(window.chart.update);
+  }
+
+  function setValues(values) {
+    window.dataBarChart = [
       {
           key: "AGOL uptime",
           values
       }
     ];
     nv.addGraph(function() {
-        var chart = nv.models.discreteBarChart()
+      window.chart = nv.models.discreteBarChart()
           .x(function(d) {
             const ts = new Date(d.ts * 1000);
             return `${ts.getHours()}:${ts.getMinutes()}:${ts.getSeconds()}`
@@ -54,12 +135,45 @@
           .showValues(false)
           .duration(250);
 
-        d3.select('#chart1 svg')
+        window.chartData = d3.select('#chart1 svg')
           .datum(dataBarChart)
-          .call(chart);
-        nv.utils.windowResize(chart.update);
-        return chart;
+          .call(window.chart);
+        nv.utils.windowResize(window.chart.update);
+        updateValues();
+        return window.chart;
     });
+
+  }
+
+
+  fetch('./logs.json')
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(allValues) {
+    window.data = {};
+    const ddm = document.getElementById('dayPicker');
+    let lastKey = '';
+
+    // filter by day
+    allValues.forEach(element => {
+      const ts = new Date(element.ts * 1000);
+      const key = `${ts.getDate()}_${ts.getMonth() + 1}_${ts.getFullYear()}`
+
+      if(!data[key]) {
+        data[key] = [];
+        lastKey = key;
+        var op = new Option();
+        op.value = key;
+        op.text = key;
+        ddm.options.add(op);
+      }
+
+      data[key].push(element);
+    });
+
+    setValues(data[lastKey]);
+
   });
 </script>
 </body>
