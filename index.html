@@ -50,8 +50,8 @@
             return d.error ? '#ff0000': '#00ff00';
           })
           .rotateLabels(90)
-          .staggerLabels(true)
-          .showValues(true)
+          .showXAxis(false)
+          .showValues(false)
           .duration(250);
 
         d3.select('#chart1 svg')

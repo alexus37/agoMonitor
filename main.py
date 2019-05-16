@@ -48,7 +48,7 @@ def main():
       "ts": int(time.time()),
       "rtt": rtt,
       "httpStatus": response.status_code,
-      "error": response_json.error if 'error' in response_json else ''
+      "error": response_json['error'] if 'error' in response_json else ''
     })
 
     # write logs
